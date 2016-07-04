@@ -27,6 +27,7 @@ The following constants, types and variables are used throughout the collectBox 
 const
   GE_TAB_EXCHANGE = 0;
   GE_TAB_HISTORY = 1;
+  GE_TAB_SETS = 2;
 
 (*
 
@@ -43,6 +44,7 @@ A type that stores the Grand Exchange interface properties.
 type
   TRSGrandExchange = record(TRSInterface)
     tabBoxes: TBoxArray;
+    confirmBox: TBox;
 end;
 
 (*
@@ -163,7 +165,8 @@ begin
       if (pos('GRAND', upperCase(tesseract_GetText(b, TESS_FILTER_SMALL_CHARS))) > 0) then
       begin
         self.setBounds([b.x1 - 88, b.y1 - 8, b.x2 + 570, b.y2 + 515]);
-        self.tabBoxes := grid(2, 1, 60, 22, 125, 0, point(x1 + 92, y1 + 113));
+        self.tabBoxes := grid(3, 1, 60, 22, 107, 0, point(x1 + 92, y1 + 113));
+        self.confirmBox := [self.x1 + 218, self.y1 + 511, self.x1 + 340, self.y1 + 524];
         exit(true);
       end;
     end;
@@ -341,7 +344,7 @@ begin
   if (self.__getActiveTab() = tab) then
     exit(true);
 
-  for 0 to 2 do
+  for 0 to 3 do
   begin
     multiClick(self.tabBoxes[tab].getGaussPoint(), 30, 3);
     wait(random(800, 1200));
@@ -378,7 +381,7 @@ Example:
 *)
 function TRSGrandExchange.getPackSlotBox(slot: integer): TBox;
 const
-  __PACK_OFFSET: TPoint = [582, 183]; // From self(x1, y1) to middle of first pack slot
+  __PACK_OFFSET: TPoint = [582, 174]; // From self(x1, y1) to middle of first pack slot
 begin
   result := gridBox(slot - 1, 4, 7, 36, 32, 46, 36, point(self.x1 + __PACK_OFFSET.x, self.y1 + __PACK_OFFSET.y));
 end;
@@ -408,7 +411,7 @@ Example:
 {$IFNDEF CODEINSIGHT}
 function TRSGrandExchange.__getSlotBoxes(): TBoxArray;
 const
-  __GE_SLOT_OFFSET: TPoint = [121, 226]; // From self(x1, y1) to middle of first GE slot
+  __GE_SLOT_OFFSET: TPoint = [104, 203]; // From self(x1, y1) to middle of first GE slot
 var
   tba: TBoxArray;
 begin
@@ -443,10 +446,15 @@ Example:
 {$IFNDEF CODEINSIGHT}
 function TRSGrandExchange.__getBuyBoxes(): TBoxArray;
 const
-  __BUY_OFFSET: TPoint = [74, 223]; // From self(x1, y1) to middle of first buy button
+  __BUY_OFFSET: TPoint = [74, 213]; // From self(x1, y1) to middle of first buy button
 var
   tba: TBoxArray;
 begin
+  if not self.isOpen() then
+  begin
+    print('TRSGrandExchange.__getBuyBoxes(): Cannot click a buy box as the GE is not open', TDebug.ERROR);
+    exit();
+  end;
   tba := grid(3, 3, 44, 44, 177, 128, point(self.x1 + __BUY_OFFSET.x, self.y1 + __BUY_OFFSET.y));
   tba.deleteIndex(8);
   result := tba;
@@ -478,7 +486,7 @@ Example:
 {$IFNDEF CODEINSIGHT}
 function TRSGrandExchange.__getSellBoxes(): TBoxArray;
 const
-  __SELL_OFFSET: TPoint = [134, 223]; // From self(x1, y1) to middle of first sell button
+  __SELL_OFFSET: TPoint = [134, 213]; // From self(x1, y1) to middle of first sell button
 var
   tba: TBoxArray;
 begin
@@ -517,10 +525,11 @@ var
   ATPA: T2DPointArray;
   i: integer;
 begin
+  grandExchange.__find;
   if findColors(TPA, 1388125, self.getBounds()) then
   begin
     ATPA := TPA.cluster(1);
-    ATPA.sortFromMidPoint(point(290, 238));
+    ATPA.sortFromFirstPoint(Point(233, 261)); //changed this
     result := ATPA.getEachBounds();
   end;
 
@@ -670,7 +679,7 @@ var
 begin
   if self.__isSlotActive(geSlot) then
   begin
-    findColors(TPA, 3088905, TBA[geSlot - 1]);
+    findColors(TPA, 2694922, TBA[geSlot - 1]);
     result := length(TPA) > 10000;
   end;
 
@@ -888,7 +897,7 @@ var
   i: integer;
   strArr : TStringArray;
   inputBox: TBoxArray;
-  amountBox: TBoxArray := grid(4, 1, 34, 24, 44, 0, point(self.x1 + 84, self.y1 + 308));
+  amountBox: TBoxArray := grid(4, 1, 34, 24, 44, 0, point(self.x1 + 84, self.y1 + 298));
 begin
   strArr := ['1', '10', '100', 'all'];
 
@@ -942,7 +951,7 @@ var
   strArr : TStringArray;
   priceBox, inputBox: TBoxArray;
 begin
-  priceBox := grid(3, 1, 34, 24, 45, 0, point(self.x1 + 367, self.y1 + 309));
+  priceBox := grid(3, 1, 34, 24, 45, 0, point(self.x1 + 367, self.y1 + 298));
 
   strArr := ['-5', 'mid', '+5'];
 
@@ -993,8 +1002,8 @@ const
 var
   i: integer;
   timeOut: UInt64;
-  resultsBox: TBoxArray := grid(3, 2, 166, 49, 172, 55, point(self.x1 + 104, self.y1 + 415));
-  resultsTextBox: TBoxArray := grid(3, 2, 122, 16, 172, 55, point(self.x1 + 121, self.y1 + 406));
+  resultsBox: TBoxArray := grid(3, 2, 166, 49, 172, 55, point(self.x1 + 104, self.y1 + 405));
+  resultsTextBox: TBoxArray := grid(3, 2, 122, 16, 172, 55, point(self.x1 + 121, self.y1 + 396));
   inputBox: TBoxArray;
 begin
   timeOut := getTickCount64() + randomRange(3000, 4000);
@@ -1089,7 +1098,7 @@ Example:
 function TRSGrandExchange.collectSlot(geSlot: integer): boolean;
 var
   TBA: TBoxArray := self.__getSlotBoxes();
-  collectBox: TBoxArray := grid(2, 1, 37, 32, 49, 0, point(self.x1 + 465, self.y1 + 394));
+  collectBox: TBoxArray := grid(2, 1, 37, 32, 49, 0, point(self.x1 + 463, self.y1 + 385));
   timeOut: UInt64;
   i: integer;
 begin
@@ -1112,17 +1121,17 @@ begin
     until (getTickCount64() < timeOut);
   end;
 
-  for i := 0 to high(collectBox) do
+  for i := high(collectBox) downto 0 do
     for  0 to 2 do // Attempt up to 3 times in case of lag
       if isItemIn(collectBox[i]) then
       begin
         mouseBox(collectBox[i], MOUSE_LEFT);
-        wait(randomRange(1750, 2500));
+        wait(randomRange(750, 1250));
 
         if not self.__isProgressOpen() then
         begin
           result := true;
-          break(2);
+          break(1);
         end;
       end;
 
@@ -1275,7 +1284,7 @@ begin
     exit(false);
   end;
 
-  mouseBox(TBA[geSlot - 1], MOUSE_LEFT);
+  mouseBox(TBA[geSlot - 1], MOUSE_LEFT, MOUSE_ACCURATE);
 
   if self.__isProgressOpen(3000) then
   begin
@@ -1369,7 +1378,7 @@ begin
   for result := 153 downto 1 do
     if (getColor(x + result, y) <> BG_COLORS[0]) and (getColor(x + result, y) <> BG_COLORS[1]) then
       exit(round(0.6897 * result));
-end
+end;
 
 (*
 sellItem
@@ -1420,7 +1429,7 @@ Example:
 function TRSGrandExchange.sellItem(packSlot: integer; price, quantity: string; waitCollect: boolean = false; waitTime: integer = 10000): boolean;
 var
   i, nextSlot: integer;
-  confirm: TBox := [self.x1 + 225, self.y1 + 518, self.x1 + 373, self.y1 + 543];
+  confirm: TBox := [self.x1 + 218, self.y1 + 508, self.x1 + 345, self.y1 + 526];
 begin
   if not self.isOpen() then
   begin
@@ -1444,7 +1453,7 @@ begin
   end;
 
   if isItemIn(self.getPackSlotBox(packSlot)) then
-    mouseBox(self.getPackSlotBox(packSlot), MOUSE_LEFT)
+    mouseBox(self.getPackSlotBox(packSlot), MOUSE_LEFT, MOUSE_ACCURATE)
   else
   begin
     print('TRSGrandExchange.sellItem(): No item in pack slot: ' + intToStr(packSlot), TDebug.ERROR);
@@ -1455,7 +1464,9 @@ begin
   begin
     self.__enterQuantity(quantity);
     self.__enterPrice(price);
-    mouseBox(confirm, MOUSE_LEFT);
+    mouseBox(confirm, MOUSE_LEFT, MOUSE_ACCURATE);
+
+
     wait(randomRange(1000, 1500));
   end;
 
@@ -1515,8 +1526,9 @@ function TRSGrandExchange.buyItem(itemName, price, quantity: string; waitCollect
 var
   i, nextSlot, x, y: integer;
   b: TBox;
+  p: TPoint;
   TBA : TBoxArray := self.__getBuyBoxes();
-  confirm: TBox := [self.x1 + 210, self.y1 + 507, self.x1 + 353, self.y1 + 525];
+  confirm: TBox := [self.x1 + 218, self.y1 + 508, self.x1 + 345, self.y1 + 526];
 begin
   if not self.isOpen() then
   begin
@@ -1539,17 +1551,18 @@ begin
     exit(false);
   end;
 
-  mouseBox(TBA[nextSlot - 1], MOUSE_LEFT);
+  mouseBox(TBA[nextSlot - 1], MOUSE_LEFT, MOUSE_ACCURATE);
 
   if self.__isOfferOpen(3000) then
-    if self.__enterName(itemName) then
-    begin
-      self.__enterQuantity(quantity);
-      self.__enterPrice(price);
-      mouseBox(confirm, MOUSE_LEFT);
-      wait(randomRange(1000, 1500));
-    end else
-      self.__returnToSummary();
+  begin
+    self.__enterName(itemName);
+    self.__enterQuantity(quantity);
+    self.__enterPrice(price);
+    mouseBox(confirm, MOUSE_LEFT);
+    wait(randomRange(1000, 1500));
+  end else
+    self.__returnToSummary();
+
 
   result := self.__isSlotBuying(nextSlot);
   print('TRSGrandExchange.buyItem(): ' + boolToStr(result), TDebug.SUB);
