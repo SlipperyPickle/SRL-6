@@ -760,7 +760,7 @@ Returns true if the offer is slot **geSlot** is currently buying.
 .. note::
 
     - by The Mayor
-    - Last Updated: 31 July 2015 by The Mayor
+    - Last Updated: 30 July 2016 by SlipperyPickle
 
 Example:
 
@@ -775,8 +775,10 @@ var
   TBA: TBoxArray := self.__getSlotBoxes();
   TPA, TPA2: TPointArray;
 begin
-  if self.__isSlotAborted(geSlot) or self.__isSlotComplete(geSlot)
-    then exit(false);
+  if self.__isSlotAborted(geSlot) then
+    exit(false);
+  if self.__isSlotComplete(geSlot) then
+    exit(true);
   findColors(TPA, 2433824, TBA[geSlot - 1]);
   findColors(TPA2, 3815734, TBA[geSlot - 1]); // If hovering the box
   TPA.combine(TPA2);
@@ -1010,16 +1012,19 @@ begin
 
   if self.__findInsertionCursor(inputBox[2]) then
     typeSend(itemName, false);
-
+  wait(gaussRangeInt(2000, 2500));
   if waitColorCountRange(9214319, 10, resultsTextBox[0], 5000, 10) then
     for i := 0 to 5 do
+    begin
+      writeLn(trim(tesseractGetText(resultsTextBox[i], TESS_FILTER_GE_CHARS)));
+      writeLn(stringMatch(trim(tesseractGetText(resultsTextBox[i], TESS_FILTER_GE_CHARS)), itemName));
       if stringMatch(trim(tesseractGetText(resultsTextBox[i], TESS_FILTER_GE_CHARS)), itemName) >= 0.7 then
       begin
         mouseBox(resultsBox[i], MOUSE_LEFT);
         waitColorCountRange(16777215, 3, inputBox[2], 5000, 507, 509);
         exit(true);
       end;
-
+    end;
   print('TRSGrandExchange.__enterName(): Found no matches for item: ' + itemName, TDebug.SUB);
 end;
 {$ENDIF}
